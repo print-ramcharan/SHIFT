@@ -44,10 +44,10 @@ public static class Constants
     public const int STREAK_GOLD_CHEST      = 30;
 
     // ─── IAP Product IDs ─────────────────────────────────────────────────────────
-    public const string IAP_SHARDS_SMALL    = "com.yourname.shift.shards_small";
-    public const string IAP_SHARDS_MEDIUM   = "com.yourname.shift.shards_medium";
-    public const string IAP_SHARDS_LARGE    = "com.yourname.shift.shards_large";
-    public const string IAP_CREATOR_PASS    = "com.yourname.shift.creator_pass";
+    public const string IAP_SHARDS_SMALL    = "com.polabathina.shift.shards_small";
+    public const string IAP_SHARDS_MEDIUM   = "com.polabathina.shift.shards_medium";
+    public const string IAP_SHARDS_LARGE    = "com.polabathina.shift.shards_large";
+    public const string IAP_CREATOR_PASS    = "com.polabathina.shift.creator_pass";
 
     // ─── Firebase ────────────────────────────────────────────────────────────────
     public const string FS_COLLECTION_USERS      = "users";

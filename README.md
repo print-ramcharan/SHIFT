@@ -93,4 +93,4 @@ git push origin main
 
 ---
 
-*Bundle ID: `com.yourname.shift` — change before submitting to stores.*
+*Bundle ID: `com.polabathina.shift` — use this in Unity Player Settings, Firebase Console, Google Play, and App Store Connect.*
