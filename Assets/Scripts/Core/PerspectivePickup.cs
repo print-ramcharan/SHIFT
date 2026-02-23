@@ -1,10 +1,9 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 /// <summary>
 /// Core mechanic script. Attach to the Player Camera or Player GameObject.
 /// Handles raycasting to detect ShiftObjects, picking them up, holding them, and dropping them.
-/// The object scales based on how far it would land, implementing the perspective illusion.
+/// Uses legacy input (works out of the box with no extra packages).
 /// </summary>
 public class PerspectivePickup : MonoBehaviour
 {
@@ -26,7 +25,7 @@ public class PerspectivePickup : MonoBehaviour
 
     // State
     private ShiftObject _heldObject;
-    private float _pickupDistance;   // distance at the moment of pickup
+    private float _pickupDistance;
     private Camera _cam;
 
     private void Awake()
@@ -39,7 +38,6 @@ public class PerspectivePickup : MonoBehaviour
     private void Update()
     {
         HandleInput();
-
         if (_heldObject != null)
             MoveHeldObject();
     }
@@ -48,23 +46,11 @@ public class PerspectivePickup : MonoBehaviour
 
     private void HandleInput()
     {
-        // Supports both new Input System (Mouse) and touch
-        bool tapped = false;
-
-#if ENABLE_INPUT_SYSTEM
-        tapped = Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame;
-        if (!tapped && Touchscreen.current != null && Touchscreen.current.primaryTouch.press.wasPressedThisFrame)
-            tapped = true;
-#else
-        tapped = Input.GetMouseButtonDown(0);
-#endif
-
-        if (!tapped) return;
-
-        if (_heldObject == null)
-            TryPickup();
-        else
-            Drop();
+        if (Input.GetMouseButtonDown(0))
+        {
+            if (_heldObject == null) TryPickup();
+            else Drop();
+        }
     }
 
     // ─── Pickup ─────────────────────────────────────────────────────────────────
@@ -72,9 +58,7 @@ public class PerspectivePickup : MonoBehaviour
     private void TryPickup()
     {
         Ray ray = _cam.ScreenPointToRay(new Vector3(Screen.width * 0.5f, Screen.height * 0.5f, 0));
-
-        if (!Physics.Raycast(ray, out RaycastHit hit, pickupRange, interactableLayer))
-            return;
+        if (!Physics.Raycast(ray, out RaycastHit hit, pickupRange, interactableLayer)) return;
 
         ShiftObject so = hit.collider.GetComponent<ShiftObject>();
         if (so == null) return;
@@ -82,26 +66,23 @@ public class PerspectivePickup : MonoBehaviour
         _heldObject = so;
         _pickupDistance = hit.distance;
         _heldObject.OnPickedUp();
+        AudioManager.Instance?.Play(AudioManager.SFX.PickUp);
     }
 
     // ─── Hold ────────────────────────────────────────────────────────────────────
 
     private void MoveHeldObject()
     {
-        // Keep object in front of camera at holdDistance
         Vector3 targetPos = _cam.transform.position + _cam.transform.forward * holdDistance;
         _heldObject.transform.position = Vector3.Lerp(
             _heldObject.transform.position, targetPos, Time.deltaTime * holdSmoothing);
 
-        // ── Perspective Scale ──────────────────────────────────────────────────
-        // Cast a ray from the camera to see where the object would land if dropped
         Ray forwardRay = new Ray(_cam.transform.position, _cam.transform.forward);
-        float raycastDistance = holdDistance; // default: use hold distance
+        float raycastDistance = holdDistance;
 
         if (Physics.Raycast(forwardRay, out RaycastHit surfaceHit, 50f, surfaceLayer))
             raycastDistance = surfaceHit.distance;
 
-        // GDD formula: newScale = baseScale * (raycastDistance / pickupDistance)
         float scaleMultiplier = raycastDistance / _pickupDistance;
         _heldObject.ApplyScale(scaleMultiplier);
     }
@@ -110,11 +91,10 @@ public class PerspectivePickup : MonoBehaviour
 
     private void Drop()
     {
+        AudioManager.Instance?.Play(AudioManager.SFX.Drop);
         _heldObject.OnDropped();
         _heldObject = null;
     }
-
-    // ─── Debug Gizmos ───────────────────────────────────────────────────────────
 
 #if UNITY_EDITOR
     private void OnDrawGizmosSelected()

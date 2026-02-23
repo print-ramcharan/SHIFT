@@ -27,8 +27,8 @@ public class GameManager : MonoBehaviour
     public UnityEvent OnGameReset;
 
     // ─── Timer ───────────────────────────────────────────────────────────────────
-    [Header("Timer")]
-    public float ElapsedTime { get; private set; }
+    private float _elapsedTime;
+    public float ElapsedTime => _elapsedTime;
     private bool _timerRunning;
 
     // ─── Lifecycle ───────────────────────────────────────────────────────────────
@@ -47,7 +47,7 @@ public class GameManager : MonoBehaviour
     private void Update()
     {
         if (_timerRunning)
-            ElapsedTime += Time.deltaTime;
+            _elapsedTime += Time.deltaTime;
     }
 
     // ─── State Transitions ───────────────────────────────────────────────────────
@@ -56,7 +56,7 @@ public class GameManager : MonoBehaviour
     {
         if (_currentState == GameState.Playing) return;
         SetState(GameState.Playing);
-        ElapsedTime = 0f;
+        _elapsedTime = 0f;
         _timerRunning = true;
         OnGameStart?.Invoke();
         Debug.Log("[GameManager] Game Started");
@@ -92,7 +92,7 @@ public class GameManager : MonoBehaviour
     public void ResetGame()
     {
         SetState(GameState.Idle);
-        ElapsedTime = 0f;
+        _elapsedTime = 0f;
         _timerRunning = false;
         Time.timeScale = 1f;
         OnGameReset?.Invoke();
