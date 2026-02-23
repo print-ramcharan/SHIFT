@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1015959839883",
+    "project_id": "shift-34108",
+    "storage_bucket": "shift-34108.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1015959839883:android:6e5c15f3639a4ac52a208e",
+        "android_client_info": {
+          "package_name": "com.polabathina.shift"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDG7z8EpFVy3U8qkDHGfYTvrhDjaN2VU0I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
