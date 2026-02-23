@@ -95,6 +95,7 @@ public static class SceneBuilder
         // ── GameManager ───────────────────────────────────────────────────────────
         var gm = new GameObject("GameManager");
         gm.AddComponent<GameManager>();
+        gm.AddComponent<TestBootstrap>();   // auto-starts game on Play
         Undo.RegisterCreatedObjectUndo(gm, "Create GameManager");
 
         // ── AudioManager ──────────────────────────────────────────────────────────
