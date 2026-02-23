@@ -7,8 +7,9 @@ using UnityEngine;
 /// Computes the daily puzzle seed using the formula from the GDD:
 ///   seed = SHA256("SHIFT_" + YYYYMMDD_UTC) → first 4 bytes → abs(int)
 ///
-/// Also provides a stub for fetching the seed from Firebase (Phase 4).
-/// Attach to any persistent GameObject (e.g. GameManager GO).
+/// Phase 4: also fetches the remote seed from Firebase and re-fires
+/// OnSeedReady if the remote value differs (so LevelGenerator rebuilds).
+/// Attach to any persistent GameObject (e.g. GameManager object).
 /// </summary>
 public class DailySeed : MonoBehaviour
 {
@@ -33,12 +34,37 @@ public class DailySeed : MonoBehaviour
         CurrentDateUTC = DateTime.UtcNow.ToString(Constants.SEED_DATE_FORMAT);
         CurrentSeed    = ComputeLocalSeed(CurrentDateUTC);
 
-        Debug.Log($"[DailySeed] Date: {CurrentDateUTC} | Seed: {CurrentSeed}");
+        Debug.Log($"[DailySeed] Local seed: {CurrentSeed} for {CurrentDateUTC}");
 
-        // TODO Phase 4: replace with Firebase fetch to override local seed
-        // StartCoroutine(FetchSeedFromFirebase(CurrentDateUTC));
-
+        // Fire immediately with local seed so LevelGenerator starts without waiting
         OnSeedReady?.Invoke(CurrentSeed);
+
+        // Phase 4: also fetch from Firebase — re-fires if remote seed differs
+        FetchSeedFromFirebase(CurrentDateUTC);
+    }
+
+    // ─── Firebase Fetch ──────────────────────────────────────────────────────────
+
+    private async void FetchSeedFromFirebase(string dateUTC)
+    {
+        if (FirebaseManager.Instance == null || !FirebaseManager.Instance.IsInitialised)
+        {
+            Debug.LogWarning("[DailySeed] Firebase not ready — using local seed.");
+            return;
+        }
+
+        int remoteSeed = await FirebaseManager.Instance.GetOrCreateDailySeedAsync(dateUTC);
+
+        if (remoteSeed != CurrentSeed)
+        {
+            Debug.Log($"[DailySeed] Remote seed ({remoteSeed}) differs — regenerating room.");
+            CurrentSeed = remoteSeed;
+            OnSeedReady?.Invoke(CurrentSeed);
+        }
+        else
+        {
+            Debug.Log("[DailySeed] Remote seed matches local — room is correct.");
+        }
     }
 
     // ─── Seed Formula ────────────────────────────────────────────────────────────
@@ -49,39 +75,13 @@ public class DailySeed : MonoBehaviour
     /// </summary>
     public static int ComputeLocalSeed(string dateUTC)
     {
-        string input      = Constants.SEED_PREFIX + dateUTC;
-        byte[] hashBytes  = SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(input));
+        string input     = Constants.SEED_PREFIX + dateUTC;
+        byte[] hashBytes = SHA256.Create().ComputeHash(Encoding.UTF8.GetBytes(input));
 
-        // Take first 4 bytes and convert to int, force positive with Math.Abs
         int rawSeed = BitConverter.ToInt32(hashBytes, 0);
         return Math.Abs(rawSeed);
     }
 
-    /// <summary>
-    /// Convenience: compute seed for a specific date string (YYYYMMDD).
-    /// Used in editor tools and testing.
-    /// </summary>
+    /// <summary>Convenience: compute seed for a specific YYYYMMDD string.</summary>
     public static int ComputeSeedForDate(string yyyymmdd) => ComputeLocalSeed(yyyymmdd);
-
-    // ─── Firebase Stub (Phase 4) ──────────────────────────────────────────────────
-    // Uncomment and implement in Phase 4 when Firebase is integrated.
-    //
-    // private async System.Threading.Tasks.Task FetchSeedFromFirebase(string dateUTC)
-    // {
-    //     try
-    //     {
-    //         var doc = await FirebaseManager.Instance.GetDailySeedDocument(dateUTC);
-    //         if (doc.Exists)
-    //         {
-    //             int firebaseSeed = int.Parse(doc.GetValue<string>("seed"));
-    //             CurrentSeed = firebaseSeed;
-    //             Debug.Log($"[DailySeed] Firebase seed: {firebaseSeed}");
-    //             OnSeedReady?.Invoke(CurrentSeed);
-    //         }
-    //     }
-    //     catch (Exception e)
-    //     {
-    //         Debug.LogWarning($"[DailySeed] Firebase fetch failed, using local seed. {e.Message}");
-    //     }
-    // }
 }
