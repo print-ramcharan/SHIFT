@@ -27,9 +27,9 @@ public class IAPManager : MonoBehaviour
 {
     public static IAPManager Instance { get; private set; }
 
-    // ─── Events ──────────────────────────────────────────────────────────────────
-    public static event Action<string> OnPurchaseSuccess;
-    public static event Action<string> OnPurchaseFailed;
+    // ─── Events ───────────────────────────────────────────────────────────────────
+    public static event Action<string> OnPurchaseCompleted;
+    public static event Action<string> OnPurchaseError;
 
     // ─── Shard amounts per product ───────────────────────────────────────────────
     private static readonly Dictionary<string, int> ShardAmounts = new Dictionary<string, int>
@@ -141,20 +141,20 @@ public class IAPManager : MonoBehaviour
             Debug.Log("[IAP] Creator Pass unlocked.");
         }
 
-        OnPurchaseSuccess?.Invoke(productId);
+        OnPurchaseCompleted?.Invoke(productId);
         return PurchaseProcessingResult.Complete;
     }
 
     public void OnPurchaseFailed(Product product, PurchaseFailureReason failureReason)
     {
         Debug.LogWarning($"[IAP] Purchase failed: {product.definition.id} — {failureReason}");
-        OnPurchaseFailed?.Invoke(product.definition.id);
+        OnPurchaseError?.Invoke(product.definition.id);
     }
 
     public void OnPurchaseFailed(Product product, PurchaseFailureDescription failureDescription)
     {
         Debug.LogWarning($"[IAP] Purchase failed: {product.definition.id} — {failureDescription.message}");
-        OnPurchaseFailed?.Invoke(product.definition.id);
+        OnPurchaseError?.Invoke(product.definition.id);
     }
 #endif
 

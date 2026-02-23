@@ -103,18 +103,13 @@ public class WinScreen : MonoBehaviour
         AudioManager.Instance?.Play(AudioManager.SFX.UIClick);
 
         string shareText = BuildShareText();
-        Debug.Log($"[WinScreen] Share: {shareText}");
 
-        // Native share on mobile
-#if UNITY_ANDROID || UNITY_IOS
-        new NativeShare()
-            .SetText(shareText)
-            .SetTitle("SHIFT — Daily Puzzle")
-            .Share();
-#else
+        // Copy to clipboard — works on all platforms without plugins
         GUIUtility.systemCopyBuffer = shareText;
-        Debug.Log("[WinScreen] Share text copied to clipboard.");
-#endif
+        Debug.Log($"[WinScreen] Share text copied to clipboard: {shareText}");
+
+        // TODO: Add NativeShare plugin from Asset Store for true mobile share sheet
+        // new NativeShare().SetText(shareText).SetTitle("SHIFT").Share();
     }
 
     private string BuildShareText()
