@@ -23,10 +23,10 @@ public class PerspectivePickup : MonoBehaviour
     [Tooltip("How smoothly the held object follows the camera.")]
     public float holdSmoothing = 10f;
 
-    // State
     private ShiftObject _heldObject;
     private float _pickupDistance;
     private Camera _cam;
+    private Quaternion _holdRotationOffset;
 
     private void Awake()
     {
@@ -65,26 +65,46 @@ public class PerspectivePickup : MonoBehaviour
 
         _heldObject = so;
         _pickupDistance = hit.distance;
+        _holdRotationOffset = Quaternion.Inverse(_cam.transform.rotation) * _heldObject.transform.rotation;
         _heldObject.OnPickedUp();
         AudioManager.Instance?.Play(AudioManager.SFX.PickUp);
     }
 
-    // ─── Hold ────────────────────────────────────────────────────────────────────
-
     private void MoveHeldObject()
     {
-        Vector3 targetPos = _cam.transform.position + _cam.transform.forward * holdDistance;
-        _heldObject.transform.position = Vector3.Lerp(
-            _heldObject.transform.position, targetPos, Time.deltaTime * holdSmoothing);
-
         Ray forwardRay = new Ray(_cam.transform.position, _cam.transform.forward);
-        float raycastDistance = holdDistance;
+        float raycastDistance = 10f; // fallback if pointing at sky
 
         if (Physics.Raycast(forwardRay, out RaycastHit surfaceHit, 50f, surfaceLayer))
+        {
             raycastDistance = surfaceHit.distance;
+        }
+        else
+        {
+            raycastDistance = 50f; // cap at 50 if looking at sky
+        }
 
+        // Calculate scale multiplier based on distance
         float scaleMultiplier = raycastDistance / _pickupDistance;
-        _heldObject.ApplyScale(scaleMultiplier);
+
+        // Offset backwards by the object's bounds so it sits flush against the wall
+        float objectDepthOffset = _heldObject.baseScale.z * scaleMultiplier * 0.5f;
+        float actualDistance = Mathf.Max(0.5f, raycastDistance - objectDepthOffset);
+
+        // Re-calculate the visual scale based on the *actual* placed distance 
+        // This ensures it perfectly matches screen size!
+        float visualScale = actualDistance / _pickupDistance;
+        _heldObject.ApplyScale(visualScale);
+
+        // Position and rotation
+        Vector3 targetPos = _cam.transform.position + _cam.transform.forward * actualDistance;
+        Quaternion targetRot = _cam.transform.rotation * _holdRotationOffset;
+
+        _heldObject.transform.position = Vector3.Lerp(
+            _heldObject.transform.position, targetPos, Time.deltaTime * holdSmoothing);
+            
+        _heldObject.transform.rotation = Quaternion.Lerp(
+            _heldObject.transform.rotation, targetRot, Time.deltaTime * holdSmoothing);
     }
 
     // ─── Drop ────────────────────────────────────────────────────────────────────

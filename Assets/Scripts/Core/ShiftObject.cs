@@ -21,10 +21,12 @@ public class ShiftObject : MonoBehaviour
     // Internal state
     public bool IsHeld { get; private set; }
     private Rigidbody _rb;
+    private Collider _collider;
 
     private void Awake()
     {
         _rb = GetComponent<Rigidbody>();
+        _collider = GetComponent<Collider>();
         baseScale = transform.localScale;
         baseMass = _rb.mass;
     }
@@ -37,6 +39,7 @@ public class ShiftObject : MonoBehaviour
     {
         IsHeld = true;
         _rb.isKinematic = true;
+        if (_collider != null) _collider.enabled = false;
     }
 
     /// <summary>
@@ -47,6 +50,7 @@ public class ShiftObject : MonoBehaviour
     {
         IsHeld = false;
         _rb.isKinematic = false;
+        if (_collider != null) _collider.enabled = true;
         RecalculateMass();
     }
 
